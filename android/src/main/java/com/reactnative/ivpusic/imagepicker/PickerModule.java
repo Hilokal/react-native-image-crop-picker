@@ -729,13 +729,36 @@ class PickerModule extends ReactContextBaseJavaModule implements ActivityEventLi
 
     private void startCropping(final Activity activity, final Uri uri) {
         UCrop.Options options = new UCrop.Options();
-        options.setCompressionFormat(Bitmap.CompressFormat.JPEG);
-        options.setCompressionQuality(100);
-        options.setCircleDimmedLayer(cropperCircleOverlay);
-        options.setFreeStyleCropEnabled(freeStyleCropEnabled);
-        options.setShowCropGrid(showCropGuidelines);
-        options.setShowCropFrame(showCropFrame);
-        options.setHideBottomControls(hideBottomControls);
+
+        String mimeType = "";
+        if (uri.getScheme().equals(ContentResolver.SCHEME_CONTENT)) {
+            ContentResolver cr = this.reactContext.getContentResolver();
+            mimeType = cr.getType(uri);
+        } else {
+            String fileExtension = MimeTypeMap.getFileExtensionFromUrl(uri
+                    .toString());
+            if (fileExtension != null) {
+                mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(fileExtension.toLowerCase());
+            }
+        }
+
+        Log.d("image-crop-picker", "mimeType: " + mimeType);
+
+        //check if this is gif
+        if (mimeType.equals("image/gif")) {
+            options.setShowCropFrame(false);
+            options.setShowCropGrid(false);
+            enableRotationGesture = false;
+        } else {
+            options.setCompressionFormat(Bitmap.CompressFormat.JPEG);
+            options.setCompressionQuality(100);
+            options.setCircleDimmedLayer(cropperCircleOverlay);
+            options.setFreeStyleCropEnabled(freeStyleCropEnabled);
+            options.setShowCropGrid(showCropGuidelines);
+            options.setShowCropFrame(showCropFrame);
+            options.setHideBottomControls(hideBottomControls);
+        }
+
 
         if (cropperToolbarTitle != null) {
             options.setToolbarTitle(cropperToolbarTitle);
@@ -766,6 +789,7 @@ class PickerModule extends ReactContextBaseJavaModule implements ActivityEventLi
     }
 
     private void imagePickerResult(Activity activity, final int requestCode, final int resultCode, final Intent data) {
+
         if (resultCode == Activity.RESULT_CANCELED) {
             resultCollector.notifyProblem(E_PICKER_CANCELLED_KEY, E_PICKER_CANCELLED_MSG);
         } else if (resultCode == Activity.RESULT_OK) {

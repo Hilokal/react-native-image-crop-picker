@@ -14,6 +14,7 @@ Pod::Spec.new do |s|
   s.dependency 'React-Core'
   s.dependency 'React-RCTImage'
   s.dependency 'TOCropViewController'
+  s.dependency 'FLAnimatedImage'
 
   s.subspec 'QBImagePickerController' do |qb|
     qb.name             = "QBImagePickerController"

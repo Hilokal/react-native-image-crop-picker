@@ -742,13 +742,13 @@ class PickerModule extends ReactContextBaseJavaModule implements ActivityEventLi
             }
         }
 
-        Log.d("image-crop-picker", "mimeType: " + mimeType);
-
         //check if this is gif
         if (mimeType.equals("image/gif")) {
-            options.setShowCropFrame(false);
+            options.setCircleDimmedLayer(false);
+            options.setFreeStyleCropEnabled(false);
             options.setShowCropGrid(false);
-            enableRotationGesture = false;
+            options.setShowCropFrame(false);
+            options.setHideBottomControls(true);
         } else {
             options.setCompressionFormat(Bitmap.CompressFormat.JPEG);
             options.setCompressionQuality(100);
@@ -757,26 +757,27 @@ class PickerModule extends ReactContextBaseJavaModule implements ActivityEventLi
             options.setShowCropGrid(showCropGuidelines);
             options.setShowCropFrame(showCropFrame);
             options.setHideBottomControls(hideBottomControls);
+
+            if (cropperToolbarTitle != null) {
+                options.setToolbarTitle(cropperToolbarTitle);
+            }
+
+            if (enableRotationGesture) {
+                // UCropActivity.ALL = enable both rotation & scaling
+                options.setAllowedGestures(
+                        UCropActivity.ALL, // When 'scale'-tab active
+                        UCropActivity.ALL, // When 'rotate'-tab active
+                        UCropActivity.ALL  // When 'aspect ratio'-tab active
+                );
+            }
+
+            if (!disableCropperColorSetters) {
+                configureCropperColors(options);
+            }
         }
 
-
-        if (cropperToolbarTitle != null) {
-            options.setToolbarTitle(cropperToolbarTitle);
-        }
-
-        if (enableRotationGesture) {
-            // UCropActivity.ALL = enable both rotation & scaling
-            options.setAllowedGestures(
-                    UCropActivity.ALL, // When 'scale'-tab active
-                    UCropActivity.ALL, // When 'rotate'-tab active
-                    UCropActivity.ALL  // When 'aspect ratio'-tab active
-            );
-        }
-
-        if (!disableCropperColorSetters) {
-            configureCropperColors(options);
-        }
-
+        //they don't support gif.
+        //https://github.com/Yalantis/uCrop/issues/293
         UCrop uCrop = UCrop
                 .of(uri, Uri.fromFile(new File(this.getTmpDir(activity), UUID.randomUUID().toString() + ".jpg")))
                 .withOptions(options);
@@ -875,6 +876,8 @@ class PickerModule extends ReactContextBaseJavaModule implements ActivityEventLi
                     }
 
                     WritableMap result = getSelection(activity, resultUri, false);
+
+                    Log.d("CroppingResult", "CroppingResult: " + result);
 
                     if (result != null) {
                         result.putMap("cropRect", PickerModule.getCroppedRectMap(data));

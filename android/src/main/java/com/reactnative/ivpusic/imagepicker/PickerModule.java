@@ -741,6 +741,7 @@ class PickerModule extends ReactContextBaseJavaModule implements ActivityEventLi
                 mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(fileExtension.toLowerCase());
             }
         }
+        String ext = ".jpg";
 
         //check if this is gif
         if (mimeType.equals("image/gif")) {
@@ -749,6 +750,7 @@ class PickerModule extends ReactContextBaseJavaModule implements ActivityEventLi
             options.setShowCropGrid(false);
             options.setShowCropFrame(false);
             options.setHideBottomControls(true);
+                 ext = ".gif";
         } else {
             options.setCompressionFormat(Bitmap.CompressFormat.JPEG);
             options.setCompressionQuality(100);
@@ -778,8 +780,12 @@ class PickerModule extends ReactContextBaseJavaModule implements ActivityEventLi
 
         //they don't support gif.
         //https://github.com/Yalantis/uCrop/issues/293
+
+        //if it is gif, extend file name to .gif
+
+
         UCrop uCrop = UCrop
-                .of(uri, Uri.fromFile(new File(this.getTmpDir(activity), UUID.randomUUID().toString() + ".jpg")))
+                .of(uri, Uri.fromFile(new File(this.getTmpDir(activity), UUID.randomUUID().toString() + ext)))
                 .withOptions(options);
 
         if (width > 0 && height > 0) {

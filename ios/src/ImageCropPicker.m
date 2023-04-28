@@ -566,8 +566,6 @@ RCT_EXPORT_METHOD(openCropper:(NSDictionary *)options
             __block int processed = 0;
 
             for (PHAsset *phAsset in assets) {
-
-
                 if (phAsset.mediaType == PHAssetMediaTypeVideo) {
                     [self getVideoAsset:phAsset completion:^(NSDictionary* video) {
                         dispatch_async(dispatch_get_main_queue(), ^{
@@ -604,6 +602,10 @@ RCT_EXPORT_METHOD(openCropper:(NSDictionary *)options
                          resultHandler:^(NSData *imageData, NSString *dataUTI, UIImageOrientation orientation, NSDictionary *info) {
 
                             NSURL *sourceURL = contentEditingInput.fullSizeImageURL;
+                            NSString *mimeType = [self determineMimeTypeFromImageData:imageData];
+                            Boolean isGif = [mimeType isEqualToString:@"image/gif"];
+
+                            NSLog(@"isGifads %s", isGif ? "true" : "false");
 
                             dispatch_async(dispatch_get_main_queue(), ^{
                                 [lock lock];
@@ -626,6 +628,7 @@ RCT_EXPORT_METHOD(openCropper:(NSDictionary *)options
 
                                     ImageResult *imageResult = [[ImageResult alloc] init];
                                     if (isLossless && useOriginalWidth && useOriginalHeight && isKnownMimeType && !forceJpg) {
+                                        NSLog(@"isGifads12345 %s", isGif ? "true" : "false");
                                         // Use original, unmodified image
                                         imageResult.data = imageData;
                                         imageResult.width = @(imgT.size.width);
@@ -633,8 +636,12 @@ RCT_EXPORT_METHOD(openCropper:(NSDictionary *)options
                                         imageResult.mime = mimeType;
                                         imageResult.image = imgT;
                                     } else {
+
+                                        NSLog(@"isGifads123 %s", isGif ? "true" : "false");
                                         imageResult = [self.compression compressImage:[imgT fixOrientation] withOptions:self.options];
                                     }
+
+                                    NSLog(@"imageResult %@", imageResult);
 
                                     NSString *filePath = @"";
                                     if([[self.options objectForKey:@"writeTempFile"] boolValue]) {
@@ -656,21 +663,40 @@ RCT_EXPORT_METHOD(openCropper:(NSDictionary *)options
                                         exif = [[CIImage imageWithData:imageData] properties];
                                     }
 
-                                    [selections addObject:[self createAttachmentResponse:filePath
-                                                                                withExif: exif
-                                                                           withSourceURL:[sourceURL absoluteString]
-                                                                     withLocalIdentifier: phAsset.localIdentifier
-                                                                            withFilename: [phAsset valueForKey:@"filename"]
-                                                                               withWidth:imageResult.width
-                                                                              withHeight:imageResult.height
-                                                                                withMime:imageResult.mime
-                                                                                withSize:[NSNumber numberWithUnsignedInteger:imageResult.data.length]
-                                                                            withDuration: nil
-                                                                                withData:[[self.options objectForKey:@"includeBase64"] boolValue] ? [imageResult.data base64EncodedStringWithOptions:0]: nil
-                                                                                withRect:CGRectNull
-                                                                        withCreationDate:phAsset.creationDate
-                                                                    withModificationDate:phAsset.modificationDate
-                                                           ]];
+                                    if(isGif){
+                                        [selections addObject:[self createAttachmentResponse:[sourceURL absoluteString]
+                                                    withExif: exif
+                                               withSourceURL:[sourceURL absoluteString]
+                                         withLocalIdentifier: phAsset.localIdentifier
+                                                withFilename: [phAsset valueForKey:@"filename"]
+                                                   withWidth:imageResult.width
+                                                  withHeight:imageResult.height
+                                                    withMime:imageResult.mime
+                                                    withSize:[NSNumber numberWithUnsignedInteger:imageResult.data.length]
+                                                withDuration: nil
+                                                    withData:[[self.options objectForKey:@"includeBase64"] boolValue] ? [imageResult.data base64EncodedStringWithOptions:0]: nil
+                                                    withRect:CGRectNull
+                                            withCreationDate:phAsset.creationDate
+                                        withModificationDate:phAsset.modificationDate
+                                                               ]];
+                                    } else {
+
+                                        [selections addObject:[self createAttachmentResponse:filePath
+                                                                    withExif: exif
+                                                               withSourceURL:[sourceURL absoluteString]
+                                                         withLocalIdentifier: phAsset.localIdentifier
+                                                                withFilename: [phAsset valueForKey:@"filename"]
+                                                                   withWidth:imageResult.width
+                                                                  withHeight:imageResult.height
+                                                                    withMime:imageResult.mime
+                                                                    withSize:[NSNumber numberWithUnsignedInteger:imageResult.data.length]
+                                                                withDuration: nil
+                                                                    withData:[[self.options objectForKey:@"includeBase64"] boolValue] ? [imageResult.data base64EncodedStringWithOptions:0]: nil
+                                                                    withRect:CGRectNull
+                                                            withCreationDate:phAsset.creationDate
+                                                        withModificationDate:phAsset.modificationDate
+                                                              ]];
+                                    }
                                 }
                                 processed++;
                                 [lock unlock];
@@ -823,7 +849,6 @@ RCT_EXPORT_METHOD(openCropper:(NSDictionary *)options
         NSLog(@"CroppingFile %@", self.croppingFile);
 
         if(GIFanimated){
-            NSArray<UIImage *> *imageArray = @[image];
             FLAnimatedImage *animatedImage1 = [FLAnimatedImage animatedImageWithGIFData:[NSData dataWithContentsOfURL:[NSURL URLWithString:sourceURL]]];
 
             [self cropAnimatedImage:animatedImage1];
